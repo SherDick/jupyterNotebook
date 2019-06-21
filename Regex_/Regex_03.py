@@ -2,6 +2,7 @@ import json
 import requests
 from multiprocessing import Pool
 from requests.exceptions import RequestException
+import threading
 import re
 
 def getOnePage(url):
@@ -29,9 +30,12 @@ def parseOnePage(html):
         }
 
 def writeToFile(content):
+    lock.acquire()
     with open('filmInfo.txt', 'a', encoding='utf-8') as f:
         f.write(json.dumps(content, ensure_ascii=False) + '\n')
         f.close()
+    lock.release()
+
 
 def main(offset):
     url = 'https://maoyan.com/board/4?offset=' + str(offset)
@@ -42,7 +46,15 @@ def main(offset):
 
 
 if __name__ == '__main__':
+    l = []
+    lock = threading.Lock()
     for i in range(10):
-        main(i * 10)
+        t = threading.Thread(target=main(i * 10), args=())
+        t.start()
+        l.append(t)
+    for t in l:
+        t.join()
+# for i in range(10):
+    #     main(i * 10)
     # pool = Pool()
     # pool.map(main, [i * 10 for i in range(10)])
